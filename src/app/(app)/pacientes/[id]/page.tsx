@@ -6,6 +6,11 @@ import DeletePatientButton from "@/components/DeletePatientButton";
 import { updatePatientAction } from "@/lib/actions/patients";
 import { RENTAL_STATUS_LABELS, type RentalStatus } from "@/lib/constants";
 
+function formatDate(d: Date | null) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("pt-BR");
+}
+
 export default async function PacienteDetalhePage({
   params,
 }: {
@@ -20,6 +25,10 @@ export default async function PacienteDetalhePage({
         rentalPeriods: {
           orderBy: { ano: "desc" },
           include: { payments: true },
+        },
+        equipmentAssignments: {
+          orderBy: { inicio: "desc" },
+          include: { equipment: true },
         },
       },
     }),
@@ -50,6 +59,59 @@ export default async function PacienteDetalhePage({
         patient={patient}
         equipments={equipments}
       />
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Equipamentos utilizados
+        </h2>
+        {patient.equipmentAssignments.length === 0 ? (
+          <p className="text-sm text-slate-400">
+            Nenhum equipamento vinculado ainda.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-2">Nº de série</th>
+                  <th className="px-4 py-2">Tipo</th>
+                  <th className="px-4 py-2">Início</th>
+                  <th className="px-4 py-2">Fim</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {patient.equipmentAssignments.map((a) => (
+                  <tr key={a.id}>
+                    <td className="px-4 py-2">
+                      {a.equipment ? (
+                        <Link
+                          href={`/equipamentos/${a.equipment.id}`}
+                          className="font-medium text-teal-700 hover:underline"
+                        >
+                          {a.numeroSerie}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500">{a.numeroSerie} (removido)</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-slate-500">
+                      {a.equipment?.tipo ?? "—"}
+                    </td>
+                    <td className="px-4 py-2 text-slate-500">{formatDate(a.inicio)}</td>
+                    <td className="px-4 py-2 text-slate-500">
+                      {a.fim ? (
+                        formatDate(a.fim)
+                      ) : (
+                        <span className="font-medium text-teal-700">Em uso</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">

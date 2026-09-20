@@ -52,7 +52,7 @@ export async function createPatientAction(
   }
 
   const patient = await prisma.patient.create({ data: { ...data, nome: data.nome } });
-  await syncEquipmentAssignment(null, data.equipmentId);
+  await syncEquipmentAssignment(patient.id, null, data.equipmentId);
   revalidatePath("/pacientes");
   revalidatePath("/equipamentos");
   redirect(`/pacientes/${patient.id}`);
@@ -79,7 +79,7 @@ export async function updatePatientAction(
     where: { id: patientId },
     data: { ...data, nome: data.nome },
   });
-  await syncEquipmentAssignment(before?.equipmentId ?? null, data.equipmentId);
+  await syncEquipmentAssignment(patientId, before?.equipmentId ?? null, data.equipmentId);
 
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${patientId}`);

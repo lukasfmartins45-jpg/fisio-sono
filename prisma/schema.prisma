@@ -36,6 +36,7 @@ model Patient {
   equipmentId             String?
   equipment               Equipment? @relation(fields: [equipmentId], references: [id])
   rentalPeriods           RentalPeriod[]
+  equipmentAssignments    EquipmentAssignment[]
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -53,11 +54,27 @@ model Equipment {
   dataManutencao   DateTime?
   status           String   @default("DISPONIVEL") // DISPONIVEL | EM_LOCACAO | VENDIDO | EM_MANUTENCAO
   patients         Patient[]
+  assignments      EquipmentAssignment[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([status])
   @@index([tipo])
+}
+
+/// Histórico de quais equipamentos cada paciente já usou ao longo do tempo.
+model EquipmentAssignment {
+  id          String     @id @default(cuid())
+  patientId   String
+  patient     Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  equipmentId String?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  numeroSerie String // cópia do número de série no momento do vínculo (sobrevive à exclusão do equipamento)
+  inicio      DateTime   @default(now())
+  fim         DateTime? // null = ainda em uso
+
+  @@index([patientId])
+  @@index([equipmentId])
 }
 
 model RentalPeriod {

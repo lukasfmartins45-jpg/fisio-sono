@@ -122,6 +122,7 @@ async function main() {
 
   // 1) Equipamentos
   const equipmentBySerial = new Map<string, string>(); // numeroSerie normalizado -> id
+  const equipmentIdToSerial = new Map<string, string>(); // id -> numeroSerie original
   for (const eq of data.equipamentos) {
     const numeroSerie = cleanNumericArtifact(eq.numeroSerie);
     if (!numeroSerie) continue;
@@ -146,6 +147,7 @@ async function main() {
       },
     });
     equipmentBySerial.set(numeroSerie.trim().toUpperCase(), created.id);
+    equipmentIdToSerial.set(created.id, created.numeroSerie);
   }
   console.log(`Equipamentos importados: ${equipmentBySerial.size}`);
 
@@ -184,6 +186,22 @@ async function main() {
     });
     pacientesCriados++;
     patientByName.set(normalizeName(p.nome), patient.id);
+
+    if (equipmentId) {
+      const numeroSerie = equipmentIdToSerial.get(equipmentId);
+      if (numeroSerie) {
+        await prisma.equipmentAssignment.create({
+          data: {
+            patientId: patient.id,
+            equipmentId,
+            numeroSerie,
+            inicio:
+              toDate(p.inicioLocacao) ?? toDate(p.dataEntregaEquipamento) ?? patient.createdAt,
+            fim: toDate(p.fimLocacao),
+          },
+        });
+      }
+    }
   }
   console.log(
     `Pacientes importados: ${pacientesCriados} (vinculados a equipamento: ${vinculosEquipamento})`
