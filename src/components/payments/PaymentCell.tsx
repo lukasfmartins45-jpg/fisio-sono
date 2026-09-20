@@ -28,12 +28,12 @@ export default function PaymentCell({
           setMonthlyPaymentAction(rentalPeriodId, mes, e.target.value);
         });
       }}
-      className={`w-full rounded-md border-0 px-1.5 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-teal-500 ${colorClass}`}
+      className={`w-full min-w-[52px] appearance-none rounded-md border-0 px-1 py-1 text-center text-[11px] font-medium leading-tight focus:outline-none focus:ring-1 focus:ring-teal-500 ${colorClass}`}
     >
       <option value="">—</option>
       <option value="PAGO">Pago</option>
-      <option value="PENDENTE">Pendente</option>
-      <option value="CORTESIA">Cortesia</option>
+      <option value="PENDENTE">Pend</option>
+      <option value="CORTESIA">Cort</option>
     </select>
   );
 }

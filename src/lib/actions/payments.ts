@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { PAYMENT_STATUS, RENTAL_STATUS } from "@/lib/constants";
+import { syncEquipmentOnRentalToggle } from "@/lib/equipment-status";
 
 export async function addPatientToYearAction(patientId: string, ano: number) {
   await requireSession();
@@ -67,34 +68,52 @@ export async function setRentalStatusAction(
   await requireSession();
   if (!RENTAL_STATUS.includes(status as never)) return;
 
-  const period = await prisma.rentalPeriod.update({
+  const before = await prisma.rentalPeriod.findUnique({
     where: { id: rentalPeriodId },
-    data: { status },
     include: { patient: true },
   });
+  if (!before) return;
 
-  const equipmentId = period.patient.equipmentId;
-  if (equipmentId) {
-    if (status === "FINALIZADO") {
-      // Locação encerrada: libera o equipamento no inventário.
-      await prisma.equipment.update({
-        where: { id: equipmentId },
-        data: { status: "DISPONIVEL" },
-      });
-    } else if (status === "EM_LOCACAO") {
-      // Volta a ficar em locação, só se ainda estava marcado como disponível
-      // (não sobrescreve "vendido" ou "em manutenção").
-      await prisma.equipment.updateMany({
-        where: { id: equipmentId, status: "DISPONIVEL" },
-        data: { status: "EM_LOCACAO" },
-      });
-    }
+  const wasActive = before.status === "EM_LOCACAO";
+  const isActive = status === "EM_LOCACAO";
+
+  await prisma.rentalPeriod.update({
+    where: { id: rentalPeriodId },
+    data: { status },
+  });
+
+  const equipmentId = before.patient.equipmentId;
+  if (equipmentId && wasActive !== isActive) {
+    await syncEquipmentOnRentalToggle(
+      before.patientId,
+      equipmentId,
+      wasActive,
+      isActive,
+      isActive ? null : new Date()
+    );
     revalidatePath("/equipamentos");
     revalidatePath(`/equipamentos/${equipmentId}`);
   }
 
+  // Mantém o "Fim da locação" do cadastro do paciente coerente com a
+  // situação marcada aqui, mas só considerando o ano corrente.
+  const currentYear = new Date().getFullYear();
+  if (before.ano === currentYear && wasActive !== isActive) {
+    if (!isActive && !before.patient.fimLocacao) {
+      await prisma.patient.update({
+        where: { id: before.patientId },
+        data: { fimLocacao: new Date() },
+      });
+    } else if (isActive && before.patient.fimLocacao) {
+      await prisma.patient.update({
+        where: { id: before.patientId },
+        data: { fimLocacao: null },
+      });
+    }
+  }
+
   revalidatePath("/pagamentos");
-  revalidatePath(`/pacientes/${period.patientId}`);
+  revalidatePath(`/pacientes/${before.patientId}`);
 }
 
 export async function updatePriceAction(ano: number, valor: number) {

@@ -7,16 +7,30 @@ import RemovePeriodButton from "@/components/payments/RemovePeriodButton";
 import AddPatientToYear from "@/components/payments/AddPatientToYear";
 import PriceEditor from "@/components/payments/PriceEditor";
 
+type Situacao = "ativos" | "finalizados" | "pendentes" | "todos";
+
+const FILTERS: { value: Situacao; label: string }[] = [
+  { value: "ativos", label: "Em locação" },
+  { value: "pendentes", label: "Com pendências" },
+  { value: "finalizados", label: "Finalizados" },
+  { value: "todos", label: "Todos" },
+];
+
 export default async function PagamentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ano?: string }>;
+  searchParams: Promise<{ ano?: string; situacao?: string }>;
 }) {
   const params = await searchParams;
   const currentYear = new Date().getFullYear();
   const ano = Number(params.ano) || currentYear;
+  const situacao: Situacao = (
+    ["ativos", "finalizados", "pendentes", "todos"] as const
+  ).includes(params.situacao as Situacao)
+    ? (params.situacao as Situacao)
+    : "ativos";
 
-  const [years, rentalPeriods, allPatients, price] = await Promise.all([
+  const [years, rentalPeriodsAll, allPatients, price] = await Promise.all([
     prisma.rentalPeriod.findMany({
       distinct: ["ano"],
       select: { ano: true },
@@ -35,8 +49,20 @@ export default async function PagamentosPage({
     new Set([...years.map((y) => y.ano), currentYear, currentYear + 1])
   ).sort((a, b) => b - a);
 
-  const patientsInYear = new Set(rentalPeriods.map((r) => r.patientId));
+  const patientsInYear = new Set(rentalPeriodsAll.map((r) => r.patientId));
   const availablePatients = allPatients.filter((p) => !patientsInYear.has(p.id));
+
+  const hasPendencia = (payments: { status: string | null }[]) =>
+    payments.some((p) => p.status === "PENDENTE");
+
+  const pendenciasCount = rentalPeriodsAll.filter((r) => hasPendencia(r.payments)).length;
+
+  const rentalPeriods = rentalPeriodsAll.filter((r) => {
+    if (situacao === "ativos") return r.status === "EM_LOCACAO";
+    if (situacao === "finalizados") return r.status === "FINALIZADO";
+    if (situacao === "pendentes") return hasPendencia(r.payments);
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -46,14 +72,14 @@ export default async function PagamentosPage({
             Pagamentos — {ano}
           </h1>
           <p className="text-sm text-slate-500">
-            {rentalPeriods.length} paciente(s) em locação neste ano
+            {rentalPeriods.length} de {rentalPeriodsAll.length} paciente(s) nesta visão
           </p>
         </div>
         <div className="flex items-center gap-2">
           {yearOptions.map((y) => (
             <Link
               key={y}
-              href={`/pagamentos?ano=${y}`}
+              href={`/pagamentos?ano=${y}&situacao=${situacao}`}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 y === ano
                   ? "bg-teal-600 text-white"
@@ -66,9 +92,38 @@ export default async function PagamentosPage({
         </div>
       </div>
 
+      {pendenciasCount > 0 && (
+        <Link
+          href={`/pagamentos?ano=${ano}&situacao=pendentes`}
+          className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 hover:bg-amber-100"
+        >
+          <span className="text-base">⚠️</span>
+          <span>
+            <strong>{pendenciasCount}</strong> paciente(s) com pagamento pendente em {ano} —
+            clique para ver quem
+          </span>
+        </Link>
+      )}
+
       <PriceEditor ano={ano} valor={price?.valor ?? 0} />
 
       <AddPatientToYear ano={ano} patients={availablePatients} />
+
+      <div className="flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <Link
+            key={f.value}
+            href={`/pagamentos?ano=${ano}&situacao=${f.value}`}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+              situacao === f.value
+                ? "bg-slate-900 text-white"
+                : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
@@ -130,7 +185,9 @@ export default async function PagamentosPage({
             {rentalPeriods.length === 0 && (
               <tr>
                 <td colSpan={16} className="px-4 py-8 text-center text-slate-400">
-                  Nenhum paciente registrado para {ano}. Adicione um acima.
+                  {rentalPeriodsAll.length === 0
+                    ? `Nenhum paciente registrado para ${ano}. Adicione um acima.`
+                    : "Nenhum paciente nessa visão. Tente outro filtro."}
                 </td>
               </tr>
             )}

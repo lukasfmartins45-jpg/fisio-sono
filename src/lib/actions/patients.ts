@@ -84,18 +84,38 @@ export async function updatePatientAction(
   });
 
   const equipmentChanged = (before?.equipmentId ?? null) !== data.equipmentId;
+  const wasActive = !before?.fimLocacao;
+  const isActive = !data.fimLocacao;
+
   if (equipmentChanged) {
     await syncEquipmentAssignment(patientId, before?.equipmentId ?? null, data.equipmentId);
-  } else {
+  } else if (wasActive !== isActive) {
     // Mesmo equipamento: se só o "Fim da locação" mudou, mantém o status do
     // equipamento coerente (finaliza libera, reabrir volta a ocupar).
     await syncEquipmentOnRentalToggle(
       patientId,
       data.equipmentId,
-      !before?.fimLocacao,
-      !data.fimLocacao,
+      wasActive,
+      isActive,
       data.fimLocacao
     );
+  }
+
+  // Mantém a "Situação" na aba Pagamentos do ano corrente coerente com o
+  // "Fim da locação" marcado aqui.
+  if (wasActive !== isActive) {
+    const currentYear = new Date().getFullYear();
+    const currentPeriod = await prisma.rentalPeriod.findUnique({
+      where: { patientId_ano: { patientId, ano: currentYear } },
+    });
+    const newStatus = isActive ? "EM_LOCACAO" : "FINALIZADO";
+    if (currentPeriod && currentPeriod.status !== newStatus) {
+      await prisma.rentalPeriod.update({
+        where: { id: currentPeriod.id },
+        data: { status: newStatus },
+      });
+      revalidatePath("/pagamentos");
+    }
   }
 
   revalidatePath("/pacientes");
