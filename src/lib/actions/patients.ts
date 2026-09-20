@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { syncEquipmentAssignment } from "@/lib/equipment-status";
 
 export type PatientFormState = { error?: string };
 
@@ -51,7 +52,9 @@ export async function createPatientAction(
   }
 
   const patient = await prisma.patient.create({ data: { ...data, nome: data.nome } });
+  await syncEquipmentAssignment(null, data.equipmentId);
   revalidatePath("/pacientes");
+  revalidatePath("/equipamentos");
   redirect(`/pacientes/${patient.id}`);
 }
 
@@ -67,12 +70,20 @@ export async function updatePatientAction(
     return { error: "Informe o nome do paciente." };
   }
 
+  const before = await prisma.patient.findUnique({
+    where: { id: patientId },
+    select: { equipmentId: true },
+  });
+
   await prisma.patient.update({
     where: { id: patientId },
     data: { ...data, nome: data.nome },
   });
+  await syncEquipmentAssignment(before?.equipmentId ?? null, data.equipmentId);
+
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${patientId}`);
+  revalidatePath("/equipamentos");
   return {};
 }
 

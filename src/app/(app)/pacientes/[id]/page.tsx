@@ -44,7 +44,12 @@ export default async function PacienteDetalhePage({
         <DeletePatientButton patientId={patient.id} />
       </div>
 
-      <PatientForm action={boundAction} patient={patient} equipments={equipments} />
+      <PatientForm
+        key={`${patient.id}-${patient.updatedAt.toISOString()}`}
+        action={boundAction}
+        patient={patient}
+        equipments={equipments}
+      />
 
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">

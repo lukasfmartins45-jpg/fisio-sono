@@ -34,7 +34,11 @@ export default async function EquipamentoDetalhePage({
         <DeleteEquipmentButton equipmentId={equipment.id} />
       </div>
 
-      <EquipmentForm action={boundAction} equipment={equipment} />
+      <EquipmentForm
+        key={`${equipment.id}-${equipment.updatedAt.toISOString()}`}
+        action={boundAction}
+        equipment={equipment}
+      />
 
       {equipment.patients.length > 0 && (
         <section>
