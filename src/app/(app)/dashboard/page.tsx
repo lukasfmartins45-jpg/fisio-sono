@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
   EQUIPMENT_STATUS,
@@ -55,6 +56,31 @@ export default async function DashboardPage() {
     prisma.priceTable.findUnique({ where: { ano: currentYear } }),
   ]);
 
+  // Paciente ativo (sem fim de locação) cujo equipamento vinculado não está
+  // marcado como "Em locação" — geralmente porque um dos dois foi editado
+  // sem o outro (ou veio assim da planilha original).
+  const pacientesComEquipamentoDivergente = await prisma.patient.findMany({
+    where: {
+      fimLocacao: null,
+      equipmentId: { not: null },
+      equipment: { status: { not: "EM_LOCACAO" } },
+    },
+    select: {
+      id: true,
+      nome: true,
+      equipment: { select: { id: true, numeroSerie: true, status: true } },
+    },
+  });
+
+  // Equipamento marcado "Em locação" sem nenhum paciente ativo vinculado a ele.
+  const equipamentosSemPacienteAtivo = await prisma.equipment.findMany({
+    where: {
+      status: "EM_LOCACAO",
+      patients: { none: { fimLocacao: null } },
+    },
+    select: { id: true, numeroSerie: true, tipo: true },
+  });
+
   const adesaoTotal = adesaoSim + adesaoNao;
   const adesaoPct = adesaoTotal > 0 ? Math.round((adesaoSim / adesaoTotal) * 100) : 0;
 
@@ -106,6 +132,66 @@ export default async function DashboardPage() {
           Visão consolidada do cadastro, equipamentos e pagamentos de {currentYear}
         </p>
       </div>
+
+      {(pacientesComEquipamentoDivergente.length > 0 ||
+        equipamentosSemPacienteAtivo.length > 0) && (
+        <section className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+            <span>⚠️</span> Inconsistências entre pacientes e equipamentos
+          </h2>
+          <p className="text-xs text-amber-800">
+            Isso acontece quando o &quot;Fim da locação&quot; de um paciente e o
+            status do equipamento vinculado ficam desencontrados (ex.: editando
+            um dos dois direto, sem passar pelo outro). Confira e ajuste.
+          </p>
+
+          {pacientesComEquipamentoDivergente.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase text-amber-800">
+                Pacientes ativos cujo equipamento não está &quot;Em locação&quot;
+              </p>
+              <ul className="space-y-1">
+                {pacientesComEquipamentoDivergente.map((p) => (
+                  <li key={p.id} className="text-sm text-amber-900">
+                    <Link href={`/pacientes/${p.id}`} className="font-medium underline">
+                      {p.nome}
+                    </Link>{" "}
+                    — equipamento{" "}
+                    <Link
+                      href={`/equipamentos/${p.equipment!.id}`}
+                      className="underline"
+                    >
+                      {p.equipment!.numeroSerie}
+                    </Link>{" "}
+                    está como &quot;
+                    {EQUIPMENT_STATUS_LABELS[p.equipment!.status as EquipmentStatus] ??
+                      p.equipment!.status}
+                    &quot;
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {equipamentosSemPacienteAtivo.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase text-amber-800">
+                Equipamentos &quot;Em locação&quot; sem paciente ativo vinculado
+              </p>
+              <ul className="space-y-1">
+                {equipamentosSemPacienteAtivo.map((e) => (
+                  <li key={e.id} className="text-sm text-amber-900">
+                    <Link href={`/equipamentos/${e.id}`} className="font-medium underline">
+                      {e.numeroSerie}
+                    </Link>{" "}
+                    ({e.tipo})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="Pacientes cadastrados" value={String(totalPacientes)} />
