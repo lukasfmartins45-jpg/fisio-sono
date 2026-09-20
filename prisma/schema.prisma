@@ -1,0 +1,89 @@
+// Prisma schema - Sistema de Locação de Equipamentos (Fisio Sono)
+// Substitui a planilha de controle de pacientes, equipamentos e pagamentos.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER") // ADMIN | USER
+  createdAt    DateTime @default(now())
+}
+
+model Patient {
+  id                      String    @id @default(cuid())
+  nome                    String
+  cidade                  String?
+  inicioLocacao           DateTime?
+  fimLocacao              DateTime?
+  aparelhoLocado          String?
+  identificacaoAparelho   String?
+  adesaoTerapia           String? // SIM | NAO | PRE_OP
+  compraCpap              String?
+  dataEntregaEquipamento  DateTime?
+  dispositivo             String?
+  nsAparelhoEntregue      String?
+  observacoes             String?
+  equipmentId             String?
+  equipment               Equipment? @relation(fields: [equipmentId], references: [id])
+  rentalPeriods           RentalPeriod[]
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([nome])
+  @@index([cidade])
+}
+
+model Equipment {
+  id               String   @id @default(cuid())
+  numeroSerie      String   @unique
+  tipo             String
+  obs              String?
+  manutencaoHoras  Int?
+  tipoManutencao   String?
+  dataManutencao   DateTime?
+  status           String   @default("DISPONIVEL") // DISPONIVEL | EM_LOCACAO | VENDIDO | EM_MANUTENCAO
+  patients         Patient[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@index([tipo])
+}
+
+model RentalPeriod {
+  id        String @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  ano       Int
+  status    String @default("EM_LOCACAO") // EM_LOCACAO | FINALIZADO
+  payments  MonthlyPayment[]
+
+  @@unique([patientId, ano])
+  @@index([ano])
+}
+
+model MonthlyPayment {
+  id             String @id @default(cuid())
+  rentalPeriodId String
+  rentalPeriod   RentalPeriod @relation(fields: [rentalPeriodId], references: [id], onDelete: Cascade)
+  mes            Int // 1-12
+  status         String? // PAGO | PENDENTE | CORTESIA | null (sem registro)
+
+  @@unique([rentalPeriodId, mes])
+}
+
+model PriceTable {
+  id    String @id @default(cuid())
+  ano   Int    @unique
+  valor Float
+}
