@@ -4,6 +4,7 @@
  *
  * Uso: npm run db:import
  */
+import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
