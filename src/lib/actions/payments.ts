@@ -70,7 +70,29 @@ export async function setRentalStatusAction(
   const period = await prisma.rentalPeriod.update({
     where: { id: rentalPeriodId },
     data: { status },
+    include: { patient: true },
   });
+
+  const equipmentId = period.patient.equipmentId;
+  if (equipmentId) {
+    if (status === "FINALIZADO") {
+      // Locação encerrada: libera o equipamento no inventário.
+      await prisma.equipment.update({
+        where: { id: equipmentId },
+        data: { status: "DISPONIVEL" },
+      });
+    } else if (status === "EM_LOCACAO") {
+      // Volta a ficar em locação, só se ainda estava marcado como disponível
+      // (não sobrescreve "vendido" ou "em manutenção").
+      await prisma.equipment.updateMany({
+        where: { id: equipmentId, status: "DISPONIVEL" },
+        data: { status: "EM_LOCACAO" },
+      });
+    }
+    revalidatePath("/equipamentos");
+    revalidatePath(`/equipamentos/${equipmentId}`);
+  }
+
   revalidatePath("/pagamentos");
   revalidatePath(`/pacientes/${period.patientId}`);
 }
