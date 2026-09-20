@@ -43,3 +43,38 @@ export async function syncEquipmentAssignment(
     }
   }
 }
+
+/**
+ * Mantém o status do equipamento coerente quando a locação de um paciente é
+ * finalizada ou reaberta pelo campo "Fim da locação" do cadastro (sem trocar
+ * de equipamento). Também fecha/reabre o registro de histórico correspondente.
+ */
+export async function syncEquipmentOnRentalToggle(
+  patientId: string,
+  equipmentId: string | null,
+  wasActive: boolean,
+  isActive: boolean,
+  fimLocacao: Date | null
+) {
+  if (!equipmentId || wasActive === isActive) return;
+
+  if (wasActive && !isActive) {
+    await prisma.equipment.update({
+      where: { id: equipmentId },
+      data: { status: "DISPONIVEL" },
+    });
+    await prisma.equipmentAssignment.updateMany({
+      where: { patientId, equipmentId, fim: null },
+      data: { fim: fimLocacao ?? new Date() },
+    });
+  } else {
+    await prisma.equipment.updateMany({
+      where: { id: equipmentId, status: "DISPONIVEL" },
+      data: { status: "EM_LOCACAO" },
+    });
+    await prisma.equipmentAssignment.updateMany({
+      where: { patientId, equipmentId, fim: { not: null } },
+      data: { fim: null },
+    });
+  }
+}

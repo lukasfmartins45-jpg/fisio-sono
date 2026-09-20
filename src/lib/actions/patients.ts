@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
-import { syncEquipmentAssignment } from "@/lib/equipment-status";
+import {
+  syncEquipmentAssignment,
+  syncEquipmentOnRentalToggle,
+} from "@/lib/equipment-status";
 
 export type PatientFormState = { error?: string };
 
@@ -72,14 +75,28 @@ export async function updatePatientAction(
 
   const before = await prisma.patient.findUnique({
     where: { id: patientId },
-    select: { equipmentId: true },
+    select: { equipmentId: true, fimLocacao: true },
   });
 
   await prisma.patient.update({
     where: { id: patientId },
     data: { ...data, nome: data.nome },
   });
-  await syncEquipmentAssignment(patientId, before?.equipmentId ?? null, data.equipmentId);
+
+  const equipmentChanged = (before?.equipmentId ?? null) !== data.equipmentId;
+  if (equipmentChanged) {
+    await syncEquipmentAssignment(patientId, before?.equipmentId ?? null, data.equipmentId);
+  } else {
+    // Mesmo equipamento: se só o "Fim da locação" mudou, mantém o status do
+    // equipamento coerente (finaliza libera, reabrir volta a ocupar).
+    await syncEquipmentOnRentalToggle(
+      patientId,
+      data.equipmentId,
+      !before?.fimLocacao,
+      !data.fimLocacao,
+      data.fimLocacao
+    );
+  }
 
   revalidatePath("/pacientes");
   revalidatePath(`/pacientes/${patientId}`);
