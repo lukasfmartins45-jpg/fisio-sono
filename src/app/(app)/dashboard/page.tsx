@@ -124,6 +124,28 @@ export default async function DashboardPage() {
 
   const maxMes = Math.max(1, ...pagamentosPorMes.map((m) => m.pagos + m.pendentes));
 
+  // Novos pacientes por mês (usando o início da locação como data de
+  // referência, já que costuma coincidir com a consulta/captação do paciente).
+  const pacientesDoAno = await prisma.patient.findMany({
+    where: {
+      inicioLocacao: {
+        gte: new Date(currentYear, 0, 1),
+        lt: new Date(currentYear + 1, 0, 1),
+      },
+    },
+    select: { inicioLocacao: true },
+  });
+  const novosPacientesPorMes = Array.from({ length: 12 }, (_, i) => {
+    const mes = i + 1;
+    const total = pacientesDoAno.filter(
+      (p) => p.inicioLocacao && p.inicioLocacao.getMonth() + 1 === mes
+    ).length;
+    return { mes, total };
+  });
+  const maxNovosPacientes = Math.max(1, ...novosPacientesPorMes.map((m) => m.total));
+  const novosPacientesMesAtual =
+    novosPacientesPorMes[new Date().getMonth()]?.total ?? 0;
+
   return (
     <div className="space-y-8">
       <div>
@@ -193,7 +215,7 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Pacientes cadastrados" value={String(totalPacientes)} />
         <StatCard label="Locações ativas" value={String(locacoesAtivas)} />
         <StatCard
@@ -202,6 +224,11 @@ export default async function DashboardPage() {
         />
         <StatCard label="Adesão à terapia" value={`${adesaoPct}%`} />
         <StatCard label={`Pendências ${currentYear}`} value={String(pendenciasAno)} />
+        <StatCard
+          label="Novos pacientes este mês"
+          value={String(novosPacientesMesAtual)}
+          hint="Pelo início da locação"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -283,6 +310,33 @@ export default async function DashboardPage() {
           Faturamento estimado = meses pagos no ano × valor da mensalidade
           configurado em Pagamentos (R${" "}
           {valorMensal.toLocaleString("pt-BR")}).
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Novos pacientes por mês em {currentYear}
+        </h2>
+        <div className="grid grid-cols-12 items-end gap-2" style={{ height: 160 }}>
+          {novosPacientesPorMes.map((m, i) => (
+            <div key={m.mes} className="flex h-full flex-col items-center justify-end gap-1">
+              <div className="flex h-full w-full flex-col-reverse">
+                <div
+                  className="w-full rounded-t bg-sky-400"
+                  style={{ height: `${(m.total / maxNovosPacientes) * 100}%` }}
+                  title={`${m.total} novo(s) paciente(s)`}
+                />
+              </div>
+              <span className="text-[10px] font-medium text-slate-600">
+                {m.total > 0 ? m.total : ""}
+              </span>
+              <span className="text-[10px] text-slate-400">{MESES[i]}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Baseado na data de início da locação de cada paciente (costuma
+          coincidir com a consulta que trouxe o paciente novo).
         </p>
       </section>
     </div>
