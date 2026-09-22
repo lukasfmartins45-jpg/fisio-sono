@@ -6,6 +6,7 @@ import {
   MESES,
   type EquipmentStatus,
 } from "@/lib/constants";
+import NewPatientsChart from "@/components/NewPatientsChart";
 
 function StatCard({
   label,
@@ -124,27 +125,30 @@ export default async function DashboardPage() {
 
   const maxMes = Math.max(1, ...pagamentosPorMes.map((m) => m.pagos + m.pendentes));
 
-  // Novos pacientes por mês (usando o início da locação como data de
-  // referência, já que costuma coincidir com a consulta/captação do paciente).
-  const pacientesDoAno = await prisma.patient.findMany({
-    where: {
-      inicioLocacao: {
-        gte: new Date(currentYear, 0, 1),
-        lt: new Date(currentYear + 1, 0, 1),
-      },
-    },
+  // Novos pacientes por mês, em todos os anos com dados (usando o início da
+  // locação como data de referência, já que costuma coincidir com a
+  // consulta/captação do paciente) — para comparar sazonalidade entre anos.
+  const pacientesComInicio = await prisma.patient.findMany({
+    where: { inicioLocacao: { not: null } },
     select: { inicioLocacao: true },
   });
-  const novosPacientesPorMes = Array.from({ length: 12 }, (_, i) => {
-    const mes = i + 1;
-    const total = pacientesDoAno.filter(
-      (p) => p.inicioLocacao && p.inicioLocacao.getMonth() + 1 === mes
-    ).length;
-    return { mes, total };
-  });
-  const maxNovosPacientes = Math.max(1, ...novosPacientesPorMes.map((m) => m.total));
+  const anosComDados = Array.from(
+    new Set(pacientesComInicio.map((p) => p.inicioLocacao!.getFullYear()))
+  ).sort((a, b) => a - b);
+  const novosPacientesPorAno = anosComDados.map((ano) => ({
+    ano,
+    meses: Array.from({ length: 12 }, (_, i) => {
+      const mes = i + 1;
+      return pacientesComInicio.filter(
+        (p) =>
+          p.inicioLocacao!.getFullYear() === ano && p.inicioLocacao!.getMonth() + 1 === mes
+      ).length;
+    }),
+  }));
   const novosPacientesMesAtual =
-    novosPacientesPorMes[new Date().getMonth()]?.total ?? 0;
+    novosPacientesPorAno
+      .find((a) => a.ano === currentYear)
+      ?.meses[new Date().getMonth()] ?? 0;
 
   return (
     <div className="space-y-8">
@@ -315,28 +319,13 @@ export default async function DashboardPage() {
 
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Novos pacientes por mês em {currentYear}
+          Novos pacientes por mês — comparar anos
         </h2>
-        <div className="grid grid-cols-12 items-end gap-2" style={{ height: 160 }}>
-          {novosPacientesPorMes.map((m, i) => (
-            <div key={m.mes} className="flex h-full flex-col items-center justify-end gap-1">
-              <div className="flex h-full w-full flex-col-reverse">
-                <div
-                  className="w-full rounded-t bg-sky-400"
-                  style={{ height: `${(m.total / maxNovosPacientes) * 100}%` }}
-                  title={`${m.total} novo(s) paciente(s)`}
-                />
-              </div>
-              <span className="text-[10px] font-medium text-slate-600">
-                {m.total > 0 ? m.total : ""}
-              </span>
-              <span className="text-[10px] text-slate-400">{MESES[i]}</span>
-            </div>
-          ))}
-        </div>
+        <NewPatientsChart data={novosPacientesPorAno} />
         <p className="mt-3 text-xs text-slate-400">
           Baseado na data de início da locação de cada paciente (costuma
-          coincidir com a consulta que trouxe o paciente novo).
+          coincidir com a consulta que trouxe o paciente novo). Clique num ano
+          para mostrar/esconder no gráfico.
         </p>
       </section>
     </div>
