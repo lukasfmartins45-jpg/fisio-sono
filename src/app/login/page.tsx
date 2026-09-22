@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "@/lib/actions/auth";
 
@@ -14,8 +15,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Fisio Sono</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <Image
+          src="/logo.jpg"
+          alt="Instituto de Terapia Respiratória"
+          width={1072}
+          height={534}
+          priority
+          className="w-full"
+        />
+        <p className="mt-3 text-sm text-slate-500">
           Locação de equipamentos — acesse sua conta
         </p>
 
@@ -35,7 +43,7 @@ export default function LoginPage() {
               required
               autoComplete="username"
               defaultValue={state.email ?? ""}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -51,7 +59,7 @@ export default function LoginPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -64,7 +72,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-teal-700 disabled:opacity-60"
+            className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
           >
             {pending ? "Entrando..." : "Entrar"}
           </button>

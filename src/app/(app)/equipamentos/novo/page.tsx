@@ -6,7 +6,7 @@ export default function NovoEquipamentoPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <Link href="/equipamentos" className="text-sm text-teal-700 hover:underline">
+        <Link href="/equipamentos" className="text-sm text-blue-700 hover:underline">
           &larr; Voltar
         </Link>
         <h1 className="mt-2 text-xl font-semibold text-slate-900">

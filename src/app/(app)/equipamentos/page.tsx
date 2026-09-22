@@ -8,7 +8,7 @@ import {
 
 const STATUS_BADGE: Record<EquipmentStatus, string> = {
   DISPONIVEL: "bg-green-100 text-green-800",
-  EM_LOCACAO: "bg-teal-100 text-teal-800",
+  EM_LOCACAO: "bg-blue-100 text-blue-800",
   VENDIDO: "bg-slate-200 text-slate-700",
   EM_MANUTENCAO: "bg-amber-100 text-amber-800",
 };
@@ -46,7 +46,7 @@ export default async function EquipamentosPage({
         </div>
         <Link
           href="/equipamentos/novo"
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Novo equipamento
         </Link>
@@ -95,7 +95,7 @@ export default async function EquipamentosPage({
                 <td className="px-4 py-2">
                   <Link
                     href={`/equipamentos/${e.id}`}
-                    className="font-medium text-teal-700 hover:underline"
+                    className="font-medium text-blue-700 hover:underline"
                   >
                     {e.numeroSerie}
                   </Link>

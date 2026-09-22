@@ -36,7 +36,7 @@ export default async function PacientesPage({
         </div>
         <Link
           href="/pacientes/novo"
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Novo paciente
         </Link>
@@ -85,7 +85,7 @@ export default async function PacientesPage({
                 <td className="px-4 py-2">
                   <Link
                     href={`/pacientes/${p.id}`}
-                    className="font-medium text-teal-700 hover:underline"
+                    className="font-medium text-blue-700 hover:underline"
                   >
                     {p.nome}
                   </Link>

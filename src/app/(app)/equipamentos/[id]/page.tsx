@@ -24,7 +24,7 @@ export default async function EquipamentoDetalhePage({
     <div className="max-w-2xl space-y-8">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Link href="/equipamentos" className="text-sm text-teal-700 hover:underline">
+          <Link href="/equipamentos" className="text-sm text-blue-700 hover:underline">
             &larr; Voltar
           </Link>
           <h1 className="mt-2 text-xl font-semibold text-slate-900">
@@ -50,7 +50,7 @@ export default async function EquipamentoDetalhePage({
               <li key={p.id} className="px-4 py-2 text-sm">
                 <Link
                   href={`/pacientes/${p.id}`}
-                  className="text-teal-700 hover:underline"
+                  className="text-blue-700 hover:underline"
                 >
                   {p.nome}
                 </Link>

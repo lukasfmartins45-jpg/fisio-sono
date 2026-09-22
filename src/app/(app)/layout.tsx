@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/lib/actions/auth";
 import NavLink from "@/components/NavLink";
@@ -25,8 +26,16 @@ export default async function AppLayout({
     <div className="flex min-h-screen bg-slate-50">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white sm:flex">
         <div className="px-5 py-5">
-          <p className="text-lg font-semibold text-slate-900">Fisio Sono</p>
-          <p className="text-xs text-slate-500">Locação de equipamentos</p>
+          <Link href="/dashboard">
+            <Image
+              src="/logo.jpg"
+              alt="Instituto de Terapia Respiratória"
+              width={1072}
+              height={534}
+              priority
+              className="w-full"
+            />
+          </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {links.map((link) => (
@@ -42,8 +51,14 @@ export default async function AppLayout({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-          <Link href="/dashboard" className="text-sm font-medium text-slate-900 sm:hidden">
-            Fisio Sono
+          <Link href="/dashboard" className="sm:hidden">
+            <Image
+              src="/logo.jpg"
+              alt="Instituto de Terapia Respiratória"
+              width={1072}
+              height={534}
+              className="h-8 w-auto"
+            />
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <span className="text-sm text-slate-600">{session.name}</span>

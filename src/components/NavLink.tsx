@@ -19,7 +19,7 @@ export default function NavLink({
       href={href as Route}
       className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${
         active
-          ? "bg-teal-50 text-teal-700"
+          ? "bg-blue-50 text-blue-700"
           : "text-slate-600 hover:bg-slate-100"
       }`}
     >

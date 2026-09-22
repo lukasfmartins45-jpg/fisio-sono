@@ -82,7 +82,7 @@ export default async function PagamentosPage({
               href={`/pagamentos?ano=${y}&situacao=${situacao}`}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                 y === ano
-                  ? "bg-teal-600 text-white"
+                  ? "bg-blue-600 text-white"
                   : "border border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
@@ -150,7 +150,7 @@ export default async function PagamentosPage({
                   <td className="sticky left-0 z-10 bg-white px-3 py-1.5 hover:bg-slate-50">
                     <Link
                       href={`/pacientes/${period.patientId}`}
-                      className="font-medium text-teal-700 hover:underline"
+                      className="font-medium text-blue-700 hover:underline"
                     >
                       {period.patient.nome}
                     </Link>

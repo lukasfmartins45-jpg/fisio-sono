@@ -7,7 +7,7 @@ type AnoData = { ano: number; meses: number[] };
 
 const YEAR_COLORS = [
   "bg-slate-300",
-  "bg-teal-300",
+  "bg-emerald-400",
   "bg-amber-400",
   "bg-violet-400",
   "bg-sky-500",

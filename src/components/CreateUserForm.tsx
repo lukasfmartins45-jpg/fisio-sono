@@ -66,7 +66,7 @@ export default function CreateUserForm() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {pending ? "Criando..." : "Criar usuário"}
         </button>

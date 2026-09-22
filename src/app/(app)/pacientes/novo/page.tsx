@@ -11,7 +11,7 @@ export default async function NovoPacientePage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <Link href="/pacientes" className="text-sm text-teal-700 hover:underline">
+        <Link href="/pacientes" className="text-sm text-blue-700 hover:underline">
           &larr; Voltar
         </Link>
         <h1 className="mt-2 text-xl font-semibold text-slate-900">

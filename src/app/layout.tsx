@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fisio Sono — Locação de Equipamentos",
+  title: "Instituto de Terapia Respiratória — Locação de Equipamentos",
   description: "Sistema de gestão de pacientes, equipamentos e pagamentos",
 };
 

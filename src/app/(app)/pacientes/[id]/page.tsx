@@ -43,7 +43,7 @@ export default async function PacienteDetalhePage({
     <div className="max-w-3xl space-y-8">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Link href="/pacientes" className="text-sm text-teal-700 hover:underline">
+          <Link href="/pacientes" className="text-sm text-blue-700 hover:underline">
             &larr; Voltar
           </Link>
           <h1 className="mt-2 text-xl font-semibold text-slate-900">
@@ -86,7 +86,7 @@ export default async function PacienteDetalhePage({
                       {a.equipment ? (
                         <Link
                           href={`/equipamentos/${a.equipment.id}`}
-                          className="font-medium text-teal-700 hover:underline"
+                          className="font-medium text-blue-700 hover:underline"
                         >
                           {a.numeroSerie}
                         </Link>
@@ -102,7 +102,7 @@ export default async function PacienteDetalhePage({
                       {a.fim ? (
                         formatDate(a.fim)
                       ) : (
-                        <span className="font-medium text-teal-700">Em uso</span>
+                        <span className="font-medium text-blue-700">Em uso</span>
                       )}
                     </td>
                   </tr>
@@ -120,7 +120,7 @@ export default async function PacienteDetalhePage({
         {patient.rentalPeriods.length === 0 ? (
           <p className="text-sm text-slate-400">
             Nenhum ano de locação registrado. Adicione em{" "}
-            <Link href="/pagamentos" className="text-teal-700 hover:underline">
+            <Link href="/pagamentos" className="text-blue-700 hover:underline">
               Pagamentos
             </Link>
             .
@@ -138,7 +138,7 @@ export default async function PacienteDetalhePage({
                 >
                   <Link
                     href={`/pagamentos?ano=${period.ano}`}
-                    className="font-medium text-teal-700 hover:underline"
+                    className="font-medium text-blue-700 hover:underline"
                   >
                     {period.ano}
                   </Link>
