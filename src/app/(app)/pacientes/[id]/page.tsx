@@ -50,7 +50,17 @@ export default async function PacienteDetalhePage({
             {patient.nome}
           </h1>
         </div>
-        <DeletePatientButton patientId={patient.id} />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/pacientes/${patient.id}/contrato`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Gerar contrato (PDF)
+          </a>
+          <DeletePatientButton patientId={patient.id} />
+        </div>
       </div>
 
       <PatientForm

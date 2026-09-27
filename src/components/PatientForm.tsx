@@ -40,11 +40,42 @@ export default function PatientForm({
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
         />
       </div>
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-slate-700">
+          Endereço completo
+        </label>
+        <input
+          name="endereco"
+          defaultValue={patient?.endereco ?? ""}
+          placeholder="Ex: Rua Coronel Antonio Frota, 410 - Centro"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          Usado no contrato de locação (rua, número e bairro — a cidade é o campo abaixo).
+        </p>
+      </div>
       <div>
         <label className="block text-sm font-medium text-slate-700">Cidade</label>
         <input
           name="cidade"
           defaultValue={patient?.cidade ?? ""}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700">CPF</label>
+        <input
+          name="cpf"
+          defaultValue={patient?.cpf ?? ""}
+          placeholder="000.000.000-00"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700">RG</label>
+        <input
+          name="rg"
+          defaultValue={patient?.rg ?? ""}
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
         />
       </div>

@@ -28,6 +28,9 @@ function parsePatientForm(formData: FormData) {
   const equipmentId = text(formData, "equipmentId");
   return {
     nome,
+    cpf: text(formData, "cpf"),
+    rg: text(formData, "rg"),
+    endereco: text(formData, "endereco"),
     cidade: text(formData, "cidade"),
     inicioLocacao: parseDate(formData.get("inicioLocacao")),
     fimLocacao: parseDate(formData.get("fimLocacao")),
