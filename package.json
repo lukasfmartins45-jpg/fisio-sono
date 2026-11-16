@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3000} -H 0.0.0.0",
+    "start:cloud": "npx prisma migrate deploy && npm run db:seed && npm run start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
     "db:import": "tsx scripts/import-xlsx.ts",
