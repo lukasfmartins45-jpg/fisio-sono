@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import CreateUserForm from "@/components/CreateUserForm";
 import DeleteUserButton from "@/components/DeleteUserButton";
+import RestoreBackupForm from "@/components/RestoreBackupForm";
 
 export default async function ConfiguracoesPage() {
   const session = await getSession();
@@ -30,6 +31,29 @@ export default async function ConfiguracoesPage() {
 
       {isAdmin && (
         <>
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Backup do banco de dados
+            </h2>
+            <p className="mb-3 text-sm text-slate-500">
+              Baixe uma cópia de segurança de todos os dados (pacientes,
+              equipamentos, pagamentos) ou restaure a partir de um backup
+              anterior.
+            </p>
+            <a
+              href="/configuracoes/backup-download"
+              className="inline-block rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Baixar backup agora
+            </a>
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-medium text-slate-700">
+                Restaurar um backup (.db)
+              </p>
+              <RestoreBackupForm />
+            </div>
+          </section>
+
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
               Novo usuário
