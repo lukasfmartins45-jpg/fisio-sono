@@ -42,9 +42,10 @@ export async function restoreBackupAction(
   }
 
   // Força o processo a reiniciar para abrir conexões limpas com o novo
-  // arquivo. Em produção (Railway) o serviço reinicia sozinho; localmente é
+  // arquivo. Sai com código de erro (não 0) para que a política de restart
+  // "ON_FAILURE" da hospedagem religue o serviço sozinha; localmente é
   // preciso rodar "npm start" de novo.
-  setTimeout(() => process.exit(0), 300);
+  setTimeout(() => process.exit(1), 300);
 
   return {
     success:
