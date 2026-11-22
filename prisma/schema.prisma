@@ -24,6 +24,7 @@ model Patient {
   nome                    String
   cpf                     String?
   rg                      String?
+  telefone                String?
   endereco                String?
   cidade                  String?
   inicioLocacao           DateTime?
@@ -96,8 +97,9 @@ model MonthlyPayment {
   id             String @id @default(cuid())
   rentalPeriodId String
   rentalPeriod   RentalPeriod @relation(fields: [rentalPeriodId], references: [id], onDelete: Cascade)
-  mes            Int // 1-12
-  status         String? // PAGO | PENDENTE | CORTESIA | null (sem registro)
+  mes               Int // 1-12
+  status            String? // PAGO | PENDENTE | CORTESIA | null (sem registro)
+  lembreteEnviadoEm DateTime?
 
   @@unique([rentalPeriodId, mes])
 }

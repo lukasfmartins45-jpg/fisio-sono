@@ -81,6 +81,20 @@ export default function PatientForm({
       </div>
       <div>
         <label className="block text-sm font-medium text-slate-700">
+          WhatsApp do paciente
+        </label>
+        <input
+          name="telefone"
+          defaultValue={patient?.telefone ?? ""}
+          placeholder="(88) 99999-9999"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          Usado para enviar o lembrete de cobrança mensal.
+        </p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700">
           Adesão à terapia
         </label>
         <select

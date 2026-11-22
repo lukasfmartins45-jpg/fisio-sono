@@ -10,6 +10,7 @@ const links = [
   { href: "/pacientes", label: "Pacientes" },
   { href: "/equipamentos", label: "Equipamentos" },
   { href: "/pagamentos", label: "Pagamentos" },
+  { href: "/cobrancas", label: "Cobranças" },
 ];
 
 export default async function AppLayout({

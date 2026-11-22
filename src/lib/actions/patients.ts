@@ -30,6 +30,7 @@ function parsePatientForm(formData: FormData) {
     nome,
     cpf: text(formData, "cpf"),
     rg: text(formData, "rg"),
+    telefone: text(formData, "telefone"),
     endereco: text(formData, "endereco"),
     cidade: text(formData, "cidade"),
     inicioLocacao: parseDate(formData.get("inicioLocacao")),
