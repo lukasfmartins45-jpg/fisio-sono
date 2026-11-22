@@ -4,41 +4,34 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
-import { reminderMessageParams } from "@/lib/cobrancas";
+import { listPendingByPatient, reminderMessageParams } from "@/lib/cobrancas";
 
-export async function sendReminderAction(monthlyPaymentId: string) {
+export async function sendReminderAction(patientId: string) {
   await requireSession();
 
-  const payment = await prisma.monthlyPayment.findUnique({
-    where: { id: monthlyPaymentId },
-    include: { rentalPeriod: { include: { patient: true } } },
-  });
+  const groups = await listPendingByPatient();
+  const group = groups.find((g) => g.patientId === patientId);
 
-  if (!payment) {
-    return { error: "Pagamento não encontrado." };
+  if (!group) {
+    return { error: "Nenhuma pendência encontrada para este paciente." };
   }
-  const telefone = payment.rentalPeriod.patient.telefone;
-  if (!telefone) {
+  if (!group.telefone) {
     return {
       error: "Esse paciente não tem WhatsApp cadastrado. Edite o cadastro dele antes.",
     };
   }
 
   const result = await sendWhatsAppTemplate(
-    telefone,
-    reminderMessageParams(
-      payment.rentalPeriod.patient.nome,
-      payment.mes,
-      payment.rentalPeriod.ano
-    )
+    group.telefone,
+    reminderMessageParams(group)
   );
 
   if (!result.ok) {
     return { error: result.error };
   }
 
-  await prisma.monthlyPayment.update({
-    where: { id: monthlyPaymentId },
+  await prisma.monthlyPayment.updateMany({
+    where: { id: { in: group.paymentIds } },
     data: { lembreteEnviadoEm: new Date() },
   });
   revalidatePath("/cobrancas");

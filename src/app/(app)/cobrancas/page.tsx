@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { listPendingMonthlyPayments } from "@/lib/cobrancas";
-import { MESES } from "@/lib/constants";
+import { listPendingByPatient, formatMesesList, formatValor } from "@/lib/cobrancas";
 import SendReminderButton from "@/components/cobrancas/SendReminderButton";
 
 export default async function CobrancasPage() {
-  const payments = await listPendingMonthlyPayments();
+  const groups = await listPendingByPatient();
 
   return (
     <div className="space-y-6">
@@ -13,7 +12,7 @@ export default async function CobrancasPage() {
         <p className="text-sm text-slate-500">
           Pacientes com locação ativa e pagamento pendente em meses já
           encerrados. O lembrete é enviado pelo WhatsApp cadastrado no
-          paciente.
+          paciente, com o total de meses em aberto.
         </p>
       </div>
 
@@ -23,48 +22,57 @@ export default async function CobrancasPage() {
             <tr>
               <th className="px-4 py-2">Paciente</th>
               <th className="px-4 py-2">WhatsApp</th>
-              <th className="px-4 py-2">Mês pendente</th>
+              <th className="px-4 py-2 text-center">Meses pendentes</th>
+              <th className="px-4 py-2">Valor devido</th>
               <th className="px-4 py-2">Último lembrete</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {payments.map((p) => (
-              <tr key={p.id}>
+            {groups.map((g) => (
+              <tr key={g.patientId}>
                 <td className="px-4 py-2">
                   <Link
-                    href={`/pacientes/${p.rentalPeriod.patientId}`}
+                    href={`/pacientes/${g.patientId}`}
                     className="font-medium text-blue-700 hover:underline"
                   >
-                    {p.rentalPeriod.patient.nome}
+                    {g.patientName}
                   </Link>
                 </td>
                 <td className="px-4 py-2 text-slate-600">
-                  {p.rentalPeriod.patient.telefone ?? (
+                  {g.telefone ?? (
                     <span className="text-amber-600">não cadastrado</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-slate-600">
-                  {MESES[p.mes - 1]}/{p.rentalPeriod.ano}
+                <td className="px-4 py-2 text-center">
+                  <span className="inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                    {g.meses.length}
+                  </span>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {formatMesesList(g.meses)}/{g.ano}
+                  </p>
+                </td>
+                <td className="px-4 py-2 font-medium text-slate-800">
+                  {formatValor(g.valorTotal)}
                 </td>
                 <td className="px-4 py-2 text-slate-500">
-                  {p.lembreteEnviadoEm
-                    ? new Date(p.lembreteEnviadoEm).toLocaleString("pt-BR")
+                  {g.ultimoLembreteEm
+                    ? new Date(g.ultimoLembreteEm).toLocaleString("pt-BR")
                     : "—"}
                 </td>
                 <td className="px-4 py-2">
-                  {p.rentalPeriod.patient.telefone && (
+                  {g.telefone && (
                     <SendReminderButton
-                      monthlyPaymentId={p.id}
-                      jaEnviado={!!p.lembreteEnviadoEm}
+                      patientId={g.patientId}
+                      jaEnviado={!!g.ultimoLembreteEm}
                     />
                   )}
                 </td>
               </tr>
             ))}
-            {payments.length === 0 && (
+            {groups.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                   Nenhuma pendência no momento. 🎉
                 </td>
               </tr>

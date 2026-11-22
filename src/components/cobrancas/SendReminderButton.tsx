@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { sendReminderAction } from "@/lib/actions/cobrancas";
 
 export default function SendReminderButton({
-  monthlyPaymentId,
+  patientId,
   jaEnviado,
 }: {
-  monthlyPaymentId: string;
+  patientId: string;
   jaEnviado: boolean;
 }) {
   const [pending, startTransition] = useTransition();
@@ -23,7 +23,7 @@ export default function SendReminderButton({
         onClick={() => {
           setMessage(null);
           startTransition(async () => {
-            const result = await sendReminderAction(monthlyPaymentId);
+            const result = await sendReminderAction(patientId);
             if (result.error) setMessage({ ok: false, text: result.error });
             else setMessage({ ok: true, text: result.success ?? "Enviado." });
           });

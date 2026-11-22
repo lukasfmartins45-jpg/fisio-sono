@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { listPendingMonthlyPayments, reminderMessageParams } from "@/lib/cobrancas";
+import { listPendingByPatient, reminderMessageParams } from "@/lib/cobrancas";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 export async function GET(request: NextRequest) {
@@ -10,31 +10,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  const pending = await listPendingMonthlyPayments();
-
-  const toSend = pending.filter(
-    (p) => !p.lembreteEnviadoEm && p.rentalPeriod.patient.telefone
-  );
+  const groups = await listPendingByPatient();
+  // Só cobra quem tem pelo menos um mês ainda sem lembrete enviado.
+  const toSend = groups.filter((g) => g.telefone && g.novosPaymentIds.length > 0);
 
   const results: { patient: string; ok: boolean; error?: string }[] = [];
 
-  for (const payment of toSend) {
+  for (const group of toSend) {
     const result = await sendWhatsAppTemplate(
-      payment.rentalPeriod.patient.telefone!,
-      reminderMessageParams(
-        payment.rentalPeriod.patient.nome,
-        payment.mes,
-        payment.rentalPeriod.ano
-      )
+      group.telefone!,
+      reminderMessageParams(group)
     );
     if (result.ok) {
-      await prisma.monthlyPayment.update({
-        where: { id: payment.id },
+      await prisma.monthlyPayment.updateMany({
+        where: { id: { in: group.paymentIds } },
         data: { lembreteEnviadoEm: new Date() },
       });
     }
     results.push({
-      patient: payment.rentalPeriod.patient.nome,
+      patient: group.patientName,
       ok: result.ok,
       error: result.ok ? undefined : result.error,
     });
