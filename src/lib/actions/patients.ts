@@ -8,6 +8,7 @@ import {
   syncEquipmentAssignment,
   syncEquipmentOnRentalToggle,
 } from "@/lib/equipment-status";
+import { ensureInitialPaymentsForNewPatient } from "@/lib/actions/payments";
 
 export type PatientFormState = { error?: string };
 
@@ -60,6 +61,7 @@ export async function createPatientAction(
 
   const patient = await prisma.patient.create({ data: { ...data, nome: data.nome } });
   await syncEquipmentAssignment(patient.id, null, data.equipmentId);
+  await ensureInitialPaymentsForNewPatient(patient.id, data.inicioLocacao ?? new Date());
   revalidatePath("/pacientes");
   revalidatePath("/equipamentos");
   redirect(`/pacientes/${patient.id}`);

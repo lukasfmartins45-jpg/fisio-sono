@@ -6,15 +6,13 @@ import { requireSession } from "@/lib/session";
 import { PAYMENT_STATUS, RENTAL_STATUS } from "@/lib/constants";
 import { syncEquipmentOnRentalToggle } from "@/lib/equipment-status";
 
-export async function addPatientToYearAction(patientId: string, ano: number) {
-  await requireSession();
-
+async function getOrCreateRentalPeriod(patientId: string, ano: number) {
   const existing = await prisma.rentalPeriod.findUnique({
     where: { patientId_ano: { patientId, ano } },
   });
   if (existing) return existing;
 
-  const rentalPeriod = await prisma.rentalPeriod.create({
+  return prisma.rentalPeriod.create({
     data: {
       patientId,
       ano,
@@ -24,10 +22,46 @@ export async function addPatientToYearAction(patientId: string, ano: number) {
       },
     },
   });
+}
 
+export async function addPatientToYearAction(patientId: string, ano: number) {
+  await requireSession();
+  const rentalPeriod = await getOrCreateRentalPeriod(patientId, ano);
   revalidatePath("/pagamentos");
   revalidatePath(`/pacientes/${patientId}`);
   return rentalPeriod;
+}
+
+/**
+ * Chamado logo após cadastrar um paciente: já entra na aba Pagamentos com
+ * o mês do início da locação marcado como pago (pago na entrega do
+ * equipamento) e o mês seguinte como pendente (cobrado depois). Se não for
+ * pago até lá, aparece sozinho na aba Cobranças.
+ */
+export async function ensureInitialPaymentsForNewPatient(
+  patientId: string,
+  dataReferencia: Date
+) {
+  const ano = dataReferencia.getFullYear();
+  const mes = dataReferencia.getMonth() + 1;
+
+  const period = await getOrCreateRentalPeriod(patientId, ano);
+  await prisma.monthlyPayment.update({
+    where: { rentalPeriodId_mes: { rentalPeriodId: period.id, mes } },
+    data: { status: "PAGO" },
+  });
+
+  const proximo = mes === 12 ? { ano: ano + 1, mes: 1 } : { ano, mes: mes + 1 };
+  const periodProximo =
+    proximo.ano === ano ? period : await getOrCreateRentalPeriod(patientId, proximo.ano);
+  await prisma.monthlyPayment.update({
+    where: { rentalPeriodId_mes: { rentalPeriodId: periodProximo.id, mes: proximo.mes } },
+    data: { status: "PENDENTE" },
+  });
+
+  revalidatePath("/pagamentos");
+  revalidatePath("/cobrancas");
+  revalidatePath(`/pacientes/${patientId}`);
 }
 
 export async function removeRentalPeriodAction(rentalPeriodId: string) {
