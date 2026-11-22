@@ -5,6 +5,7 @@ import { createPatientAction } from "@/lib/actions/patients";
 
 export default async function NovoPacientePage() {
   const equipments = await prisma.equipment.findMany({
+    where: { status: "DISPONIVEL" },
     orderBy: { numeroSerie: "asc" },
   });
 

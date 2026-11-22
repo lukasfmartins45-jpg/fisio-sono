@@ -37,6 +37,13 @@ export default async function PacienteDetalhePage({
 
   if (!patient) notFound();
 
+  // Só mostra no seletor os equipamentos disponíveis, mais o que já está
+  // com este paciente (evita vincular por engano um equipamento que já
+  // está em uso com outro paciente).
+  const equipmentsSelecionaveis = equipments.filter(
+    (e) => e.status === "DISPONIVEL" || e.id === patient.equipmentId
+  );
+
   const boundAction = updatePatientAction.bind(null, patient.id);
 
   return (
@@ -67,7 +74,7 @@ export default async function PacienteDetalhePage({
         key={`${patient.id}-${patient.updatedAt.toISOString()}`}
         action={boundAction}
         patient={patient}
-        equipments={equipments}
+        equipments={equipmentsSelecionaveis}
       />
 
       <section>
