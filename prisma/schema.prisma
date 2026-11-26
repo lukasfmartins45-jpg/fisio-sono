@@ -41,6 +41,7 @@ model Patient {
   equipment               Equipment? @relation(fields: [equipmentId], references: [id])
   rentalPeriods           RentalPeriod[]
   equipmentAssignments    EquipmentAssignment[]
+  stockMovements          StockMovement[]
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -108,4 +109,38 @@ model PriceTable {
   id    String @id @default(cuid())
   ano   Int    @unique
   valor Float
+}
+
+/// Catálogo de materiais do estoque (máscaras, tubos, CPAP novo/usado à
+/// venda, mentoneiras etc). Separado do Equipment, que é o inventário de
+/// CPAPs de locação controlados por número de série.
+model StockItem {
+  id         String   @id @default(cuid())
+  categoria  String // MASCARA | TUBO | CPAP_NOVO | CPAP_USADO | MENTONEIRA | OUTRO
+  nome       String // ex: "Máscara Nasal Wisp - Philips Respironics", "CPAP AUTO RESMED"
+  marca      String?
+  quantidade Int      @default(0)
+  movements  StockMovement[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([categoria, nome])
+  @@index([categoria])
+}
+
+/// Histórico de entradas (chegada de material) e saídas (entregue/vendido
+/// a um paciente) de cada item do estoque.
+model StockMovement {
+  id          String   @id @default(cuid())
+  stockItemId String
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  tipo        String // ENTRADA | SAIDA
+  quantidade  Int
+  motivo      String?
+  patientId   String?
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  data        DateTime @default(now())
+
+  @@index([stockItemId])
+  @@index([patientId])
 }

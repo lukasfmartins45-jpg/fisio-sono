@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-import type { Patient, Equipment } from "@prisma/client";
-import { ADESAO_TERAPIA, ADESAO_TERAPIA_LABELS } from "@/lib/constants";
+import { useActionState, useState } from "react";
+import type { Patient, Equipment, StockItem } from "@prisma/client";
+import {
+  ADESAO_TERAPIA,
+  ADESAO_TERAPIA_LABELS,
+  CPAP_TIPOS_VENDA,
+} from "@/lib/constants";
 import type { PatientFormState } from "@/lib/actions/patients";
 
 type Action = (
@@ -20,13 +24,16 @@ export default function PatientForm({
   action,
   patient,
   equipments,
+  mascaraOptions,
   submitLabel = "Salvar",
 }: {
   action: Action;
   patient?: Patient;
   equipments: Equipment[];
+  mascaraOptions?: StockItem[];
   submitLabel?: string;
 }) {
+  const [cpapVenda, setCpapVenda] = useState("NENHUM");
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
@@ -227,6 +234,72 @@ export default function PatientForm({
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
         />
       </div>
+
+      {!patient && mascaraOptions && (
+        <div className="sm:col-span-2 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-medium text-slate-700">
+            Material entregue no cadastro (sai do estoque automaticamente)
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                Máscara entregue
+              </label>
+              <select
+                name="mascaraStockItemId"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">— Nenhuma —</option>
+                {mascaraOptions.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="entregouTubo" value="1" />
+                Entregou tubo de CPAP
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                Venda de CPAP
+              </label>
+              <select
+                name="cpapVendaTipo"
+                value={cpapVenda}
+                onChange={(e) => setCpapVenda(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="NENHUM">Não vendeu CPAP</option>
+                <option value="NOVO">Vendeu CPAP novo</option>
+                <option value="USADO">Vendeu CPAP usado</option>
+              </select>
+            </div>
+          </div>
+          {cpapVenda !== "NENHUM" && (
+            <div className="sm:w-1/3">
+              <label className="block text-sm font-medium text-slate-700">
+                Modelo do CPAP vendido
+              </label>
+              <select
+                name="cpapVendaModelo"
+                required
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">— Selecione —</option>
+                {CPAP_TIPOS_VENDA.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {tipo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {state.error && (
         <p className="sm:col-span-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

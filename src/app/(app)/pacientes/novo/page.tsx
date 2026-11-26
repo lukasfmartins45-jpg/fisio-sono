@@ -4,10 +4,16 @@ import PatientForm from "@/components/PatientForm";
 import { createPatientAction } from "@/lib/actions/patients";
 
 export default async function NovoPacientePage() {
-  const equipments = await prisma.equipment.findMany({
-    where: { status: "DISPONIVEL" },
-    orderBy: { numeroSerie: "asc" },
-  });
+  const [equipments, mascaraOptions] = await Promise.all([
+    prisma.equipment.findMany({
+      where: { status: "DISPONIVEL" },
+      orderBy: { numeroSerie: "asc" },
+    }),
+    prisma.stockItem.findMany({
+      where: { categoria: "MASCARA" },
+      orderBy: { nome: "asc" },
+    }),
+  ]);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -22,6 +28,7 @@ export default async function NovoPacientePage() {
       <PatientForm
         action={createPatientAction}
         equipments={equipments}
+        mascaraOptions={mascaraOptions}
         submitLabel="Cadastrar"
       />
     </div>

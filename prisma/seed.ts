@@ -1,8 +1,17 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { CPAP_TIPOS_VENDA, MASCARA_MODELOS } from "../src/lib/constants";
 
 const prisma = new PrismaClient();
+
+function marcaDoCpap(tipo: string): string {
+  if (tipo.includes("RESMED")) return "Resmed";
+  if (tipo.includes("PHILIPS")) return "Philips Respironics";
+  if (tipo.includes("YUWELL")) return "Yuwell";
+  if (tipo.includes("BMC")) return "BMC";
+  return "Outro";
+}
 
 async function main() {
   const email = "admin@fisiosono.local";
@@ -37,6 +46,35 @@ async function main() {
     });
   }
   console.log("Tabela de preços padrão garantida.");
+
+  for (const { nome, marca } of MASCARA_MODELOS) {
+    await prisma.stockItem.upsert({
+      where: { categoria_nome: { categoria: "MASCARA", nome } },
+      update: {},
+      create: { categoria: "MASCARA", nome, marca },
+    });
+  }
+  await prisma.stockItem.upsert({
+    where: { categoria_nome: { categoria: "TUBO", nome: "Tubo de CPAP" } },
+    update: {},
+    create: { categoria: "TUBO", nome: "Tubo de CPAP" },
+  });
+  await prisma.stockItem.upsert({
+    where: { categoria_nome: { categoria: "MENTONEIRA", nome: "Mentoneira" } },
+    update: {},
+    create: { categoria: "MENTONEIRA", nome: "Mentoneira" },
+  });
+  for (const tipo of CPAP_TIPOS_VENDA) {
+    const marca = marcaDoCpap(tipo);
+    for (const categoria of ["CPAP_NOVO", "CPAP_USADO"] as const) {
+      await prisma.stockItem.upsert({
+        where: { categoria_nome: { categoria, nome: tipo } },
+        update: {},
+        create: { categoria, nome: tipo, marca },
+      });
+    }
+  }
+  console.log("Catálogo padrão de estoque garantido.");
 }
 
 main()

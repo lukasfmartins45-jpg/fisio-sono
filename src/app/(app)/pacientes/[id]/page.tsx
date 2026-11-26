@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import PatientForm from "@/components/PatientForm";
 import DeletePatientButton from "@/components/DeletePatientButton";
+import StockSaleForm from "@/components/estoque/StockSaleForm";
 import { updatePatientAction } from "@/lib/actions/patients";
 import { RENTAL_STATUS_LABELS, type RentalStatus } from "@/lib/constants";
 
@@ -18,7 +19,7 @@ export default async function PacienteDetalhePage({
 }) {
   const { id } = await params;
 
-  const [patient, equipments] = await Promise.all([
+  const [patient, equipments, materiaisVendaveis] = await Promise.all([
     prisma.patient.findUnique({
       where: { id },
       include: {
@@ -30,9 +31,15 @@ export default async function PacienteDetalhePage({
           orderBy: { inicio: "desc" },
           include: { equipment: true },
         },
+        stockMovements: {
+          where: { tipo: "SAIDA" },
+          orderBy: { data: "desc" },
+          include: { stockItem: true },
+        },
       },
     }),
     prisma.equipment.findMany({ orderBy: { numeroSerie: "asc" } }),
+    prisma.stockItem.findMany({ orderBy: [{ categoria: "asc" }, { nome: "asc" }] }),
   ]);
 
   if (!patient) notFound();
@@ -128,6 +135,35 @@ export default async function PacienteDetalhePage({
             </table>
           </div>
         )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Materiais (máscaras, tubos, CPAP vendido)
+        </h2>
+        {patient.stockMovements.length === 0 ? (
+          <p className="text-sm text-slate-400">Nenhum material registrado ainda.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+            {patient.stockMovements.map((m) => (
+              <li key={m.id} className="flex items-center justify-between px-4 py-2 text-sm">
+                <span className="text-slate-700">{m.stockItem.nome}</span>
+                <span className="text-slate-500">{m.quantidade}x</span>
+                <span className="text-slate-400">
+                  {new Date(m.data).toLocaleDateString("pt-BR")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <details className="rounded-xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700">
+            Registrar nova compra (ex: máscara em retorno)
+          </summary>
+          <div className="mt-4">
+            <StockSaleForm items={materiaisVendaveis} fixedPatientId={patient.id} />
+          </div>
+        </details>
       </section>
 
       <section>

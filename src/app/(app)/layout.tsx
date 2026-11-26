@@ -11,6 +11,7 @@ const links = [
   { href: "/equipamentos", label: "Equipamentos" },
   { href: "/pagamentos", label: "Pagamentos" },
   { href: "/cobrancas", label: "Cobranças" },
+  { href: "/estoque", label: "Estoque" },
 ];
 
 export default async function AppLayout({

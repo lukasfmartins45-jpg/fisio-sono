@@ -48,6 +48,66 @@ function parsePatientForm(formData: FormData) {
   };
 }
 
+async function registerMaterialHandout(patientId: string, formData: FormData) {
+  const mascaraStockItemId = text(formData, "mascaraStockItemId");
+  const entregouTubo = formData.get("entregouTubo") === "1";
+  const cpapVendaTipo = text(formData, "cpapVendaTipo");
+  const cpapVendaModelo = text(formData, "cpapVendaModelo");
+
+  const saidas: { stockItemId: string; quantidade: number; motivo: string }[] = [];
+
+  if (mascaraStockItemId) {
+    saidas.push({
+      stockItemId: mascaraStockItemId,
+      quantidade: 1,
+      motivo: "Entregue no cadastro do paciente",
+    });
+  }
+
+  if (entregouTubo) {
+    const tubo = await prisma.stockItem.findFirst({ where: { categoria: "TUBO" } });
+    if (tubo) {
+      saidas.push({
+        stockItemId: tubo.id,
+        quantidade: 1,
+        motivo: "Entregue no cadastro do paciente",
+      });
+    }
+  }
+
+  if (cpapVendaTipo && cpapVendaTipo !== "NENHUM" && cpapVendaModelo) {
+    const categoria = cpapVendaTipo === "NOVO" ? "CPAP_NOVO" : "CPAP_USADO";
+    const item = await prisma.stockItem.findUnique({
+      where: { categoria_nome: { categoria, nome: cpapVendaModelo } },
+    });
+    if (item) {
+      saidas.push({
+        stockItemId: item.id,
+        quantidade: 1,
+        motivo: `Venda de CPAP ${cpapVendaTipo === "NOVO" ? "novo" : "usado"} no cadastro`,
+      });
+    }
+  }
+
+  for (const saida of saidas) {
+    await prisma.$transaction([
+      prisma.stockItem.update({
+        where: { id: saida.stockItemId },
+        data: { quantidade: { decrement: saida.quantidade } },
+      }),
+      prisma.stockMovement.create({
+        data: {
+          stockItemId: saida.stockItemId,
+          tipo: "SAIDA",
+          quantidade: saida.quantidade,
+          motivo: saida.motivo,
+          patientId,
+        },
+      }),
+    ]);
+  }
+}
+
 export async function createPatientAction(
   _prevState: PatientFormState,
   formData: FormData
@@ -62,8 +122,10 @@ export async function createPatientAction(
   const patient = await prisma.patient.create({ data: { ...data, nome: data.nome } });
   await syncEquipmentAssignment(patient.id, null, data.equipmentId);
   await ensureInitialPaymentsForNewPatient(patient.id, data.inicioLocacao ?? new Date());
+  await registerMaterialHandout(patient.id, formData);
   revalidatePath("/pacientes");
   revalidatePath("/equipamentos");
+  revalidatePath("/estoque");
   redirect(`/pacientes/${patient.id}`);
 }
 

@@ -45,6 +45,45 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   CORTESIA: "bg-sky-100 text-sky-800",
 };
 
+export const STOCK_CATEGORIAS = [
+  "MASCARA",
+  "TUBO",
+  "CPAP_NOVO",
+  "CPAP_USADO",
+  "MENTONEIRA",
+  "OUTRO",
+] as const;
+export type StockCategoria = (typeof STOCK_CATEGORIAS)[number];
+
+export const STOCK_CATEGORIA_LABELS: Record<StockCategoria, string> = {
+  MASCARA: "Máscara",
+  TUBO: "Tubo de CPAP",
+  CPAP_NOVO: "CPAP novo (venda)",
+  CPAP_USADO: "CPAP usado (venda)",
+  MENTONEIRA: "Mentoneira",
+  OUTRO: "Outro material",
+};
+
+export const STOCK_MOVIMENTO_TIPOS = ["ENTRADA", "SAIDA"] as const;
+export type StockMovimentoTipo = (typeof STOCK_MOVIMENTO_TIPOS)[number];
+
+// Tipos de CPAP que a clínica também vende (mesmo catálogo usado no
+// inventário de locação em Equipamentos).
+export const CPAP_TIPOS_VENDA = [
+  "CPAP AUTO RESMED",
+  "CPAP FIXO RESMED",
+  "CPAP AUTO PHILIPS",
+  "CPAP AUTO YUWELL",
+  "BILEVEL BMC",
+] as const;
+
+export const MASCARA_MODELOS = [
+  { nome: "Máscara Nasal Wisp - Philips Respironics", marca: "Philips Respironics" },
+  { nome: "Máscara Nasal DreamWear - Philips Respironics", marca: "Philips Respironics" },
+  { nome: "Máscara Nasal Mirage FX - Resmed", marca: "Resmed" },
+  { nome: "Máscara Nasal DreamWear Pillow - Philips Respironics", marca: "Philips Respironics" },
+] as const;
+
 export const MESES = [
   "Jan",
   "Fev",
