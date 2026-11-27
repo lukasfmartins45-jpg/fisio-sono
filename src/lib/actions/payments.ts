@@ -89,14 +89,67 @@ export async function markElapsedMonthsAsPending() {
     await getOrCreateRentalPeriod(patient.id, ano);
   }
 
-  await prisma.monthlyPayment.updateMany({
-    where: {
-      status: null,
-      mes: { lte: mesAtual },
-      rentalPeriod: { ano, status: "EM_LOCACAO" },
+  // Não marca como pendente nenhum mês anterior ao início real da locação
+  // de cada paciente, então busca período por período (não dá pra fazer
+  // isso num updateMany só, porque o "mês mínimo" depende do paciente).
+  const periodos = await prisma.rentalPeriod.findMany({
+    where: { ano, status: "EM_LOCACAO" },
+    include: {
+      patient: { select: { inicioLocacao: true } },
+      payments: { where: { status: null } },
     },
-    data: { status: "PENDENTE" },
   });
+
+  const idsParaPendente: string[] = [];
+  for (const periodo of periodos) {
+    const inicio = periodo.patient.inicioLocacao;
+    const mesInicio = inicio && inicio.getFullYear() === ano ? inicio.getMonth() + 1 : 1;
+    for (const pagamento of periodo.payments) {
+      if (pagamento.mes >= mesInicio && pagamento.mes <= mesAtual) {
+        idsParaPendente.push(pagamento.id);
+      }
+    }
+  }
+
+  if (idsParaPendente.length > 0) {
+    await prisma.monthlyPayment.updateMany({
+      where: { id: { in: idsParaPendente } },
+      data: { status: "PENDENTE" },
+    });
+  }
+}
+
+/**
+ * Correção de uso único: reverte meses que viraram "pendente" antes do
+ * início real da locação do paciente (bug corrigido em
+ * markElapsedMonthsAsPending). Só mexe em pagamentos que estão como
+ * PENDENTE hoje — nunca em PAGO/CORTESIA.
+ */
+export async function revertPendingBeforeRentalStart() {
+  const periodos = await prisma.rentalPeriod.findMany({
+    include: {
+      patient: { select: { inicioLocacao: true } },
+      payments: { where: { status: "PENDENTE" } },
+    },
+  });
+
+  const idsParaReverter: string[] = [];
+  for (const periodo of periodos) {
+    const inicio = periodo.patient.inicioLocacao;
+    if (!inicio || inicio.getFullYear() !== periodo.ano) continue;
+    const mesInicio = inicio.getMonth() + 1;
+    for (const pagamento of periodo.payments) {
+      if (pagamento.mes < mesInicio) idsParaReverter.push(pagamento.id);
+    }
+  }
+
+  if (idsParaReverter.length > 0) {
+    await prisma.monthlyPayment.updateMany({
+      where: { id: { in: idsParaReverter } },
+      data: { status: null },
+    });
+  }
+  return idsParaReverter.length;
 }
 
 export async function removeRentalPeriodAction(rentalPeriodId: string) {
