@@ -7,6 +7,7 @@ import {
   type EquipmentStatus,
 } from "@/lib/constants";
 import NewPatientsChart from "@/components/NewPatientsChart";
+import { markElapsedMonthsAsPending } from "@/lib/actions/payments";
 
 function StatCard({
   label,
@@ -27,6 +28,7 @@ function StatCard({
 }
 
 export default async function DashboardPage() {
+  await markElapsedMonthsAsPending();
   const currentYear = new Date().getFullYear();
 
   const [

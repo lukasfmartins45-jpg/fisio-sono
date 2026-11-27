@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MESES } from "@/lib/constants";
+import { markElapsedMonthsAsPending } from "@/lib/actions/payments";
 import PaymentCell from "@/components/payments/PaymentCell";
 import RentalStatusSelect from "@/components/payments/RentalStatusSelect";
 import RemovePeriodButton from "@/components/payments/RemovePeriodButton";
@@ -21,6 +22,7 @@ export default async function PagamentosPage({
 }: {
   searchParams: Promise<{ ano?: string; situacao?: string }>;
 }) {
+  await markElapsedMonthsAsPending();
   const params = await searchParams;
   const currentYear = new Date().getFullYear();
   const ano = Number(params.ano) || currentYear;

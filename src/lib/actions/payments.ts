@@ -6,7 +6,7 @@ import { requireSession } from "@/lib/session";
 import { PAYMENT_STATUS, RENTAL_STATUS } from "@/lib/constants";
 import { syncEquipmentOnRentalToggle } from "@/lib/equipment-status";
 
-async function getOrCreateRentalPeriod(patientId: string, ano: number) {
+export async function getOrCreateRentalPeriod(patientId: string, ano: number) {
   const existing = await prisma.rentalPeriod.findUnique({
     where: { patientId_ano: { patientId, ano } },
   });
@@ -62,6 +62,41 @@ export async function ensureInitialPaymentsForNewPatient(
   revalidatePath("/pagamentos");
   revalidatePath("/cobrancas");
   revalidatePath(`/pacientes/${patientId}`);
+}
+
+/**
+ * Mantém os meses de locações ativas sempre em dia: garante que todo
+ * paciente com locação ativa já tenha o período do ano corrente criado
+ * (mesmo virando o ano sem ninguém mexer manualmente), e marca como
+ * "pendente" todo mês já iniciado que ainda não tem status (nem pago,
+ * nem cortesia) — assim, a cada mês que passa, o sistema já cobra sozinho,
+ * sem precisar que alguém marque nada à mão.
+ */
+export async function markElapsedMonthsAsPending() {
+  const now = new Date();
+  const ano = now.getFullYear();
+  const mesAtual = now.getMonth() + 1;
+
+  const patientesSemPeriodoAtual = await prisma.patient.findMany({
+    where: {
+      fimLocacao: null,
+      rentalPeriods: { some: { status: "EM_LOCACAO" } },
+      NOT: { rentalPeriods: { some: { ano } } },
+    },
+    select: { id: true },
+  });
+  for (const patient of patientesSemPeriodoAtual) {
+    await getOrCreateRentalPeriod(patient.id, ano);
+  }
+
+  await prisma.monthlyPayment.updateMany({
+    where: {
+      status: null,
+      mes: { lte: mesAtual },
+      rentalPeriod: { ano, status: "EM_LOCACAO" },
+    },
+    data: { status: "PENDENTE" },
+  });
 }
 
 export async function removeRentalPeriodAction(rentalPeriodId: string) {

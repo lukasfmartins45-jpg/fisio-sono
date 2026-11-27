@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { MESES_LONGOS } from "@/lib/constants";
+import { markElapsedMonthsAsPending } from "@/lib/actions/payments";
 
 export type PendingGroup = {
   patientId: string;
@@ -18,6 +19,7 @@ export type PendingGroup = {
  * de pacientes com locação ativa no ano corrente, agrupados por paciente.
  */
 export async function listPendingByPatient(): Promise<PendingGroup[]> {
+  await markElapsedMonthsAsPending();
   const now = new Date();
   const ano = now.getFullYear();
   const mesAtual = now.getMonth() + 1;
